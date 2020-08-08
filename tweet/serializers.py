@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db.models import Q
 from django.contrib.auth.models import User
-from .models import Tweet
+from .models import Tweet,Comment
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str,force_str,smart_bytes,DjangoUnicodeDecodeError
@@ -33,14 +33,31 @@ class TweetCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('This is too long ')
         return value
 
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    reply = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['content','user','reply']
+
+    def get_user(self,obj):
+        return str(obj.user.username)
+
+    def get_reply(self,obj):
+        if obj.is_parent:
+            return obj.children().count()
+        return 0
+
 class TweetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     likes = serializers.SerializerMethodField(read_only=True)
+    comments = CommentSerializer(many=True)
     parent = TweetCreateSerializer(read_only =True)
 
     class Meta:
         model = Tweet
-        fields = ['content','user','likes','is_retweet','parent']
+        fields = ['content','user','likes','is_retweet','parent','comments']
 
     def get_likes(self,obj):
         return obj.likes.count()
