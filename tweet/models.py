@@ -1,7 +1,8 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
-from django.db.models import Q
+
 
 class TweetQuerySet(models.QuerySet):
 
@@ -48,27 +49,18 @@ class Tweet(models.Model):
         return self.parent != None
 
 class Comment(models.Model):
-    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, related_name='comments')
+    tweet = models.ForeignKey(Tweet,on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
+    reply_parent = models.ForeignKey('self', null=True, related_name='replies', on_delete=models.CASCADE)
 
     class Meta:
-        ordering = ('-created_at',)
+        ordering = ('created_at',)
 
 
     def __str__(self):
         return f'Comment by {self.user.username} on {self.tweet}'
-
-    def children(self):
-        return Comment.objects.filter(parent=self)
-
-    @property
-    def is_parent(self):
-        if self.parent is not None:
-            return False
-        return True
 
 class FollowerRelation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -88,7 +80,6 @@ class Profile(models.Model):
             Profile.objects.get_or_create(user=instance)
 
         post_save.connect(user_did_save, sender=User)
-
 
 
 
