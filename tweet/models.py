@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class TweetQuerySet(models.QuerySet):
@@ -12,8 +13,7 @@ class TweetQuerySet(models.QuerySet):
         follow_user_id = []
         if profiles_exist:
             follow_user_id = user.following.values_list('user__id',flat=True)
-        return self.filter(Q(user__id__in=follow_user_id) |
-                                  Q(user=user)).distinct().order_by("-timestamp")
+        return self.filter(Q(user__id__in=follow_user_id) | Q(user=user)).distinct().order_by("-timestamp")
 
 class TweetManager(models.Manager):
 
@@ -49,11 +49,12 @@ class Tweet(models.Model):
         return self.parent != None
 
 class Comment(models.Model):
-    tweet = models.ForeignKey(Tweet,on_delete=models.CASCADE, related_name='comments')
+    tweet = models.ForeignKey(Tweet,on_delete=models.CASCADE,
+                              related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    reply_parent = models.ForeignKey('self', null=True, related_name='replies', on_delete=models.CASCADE)
+    reply_parent = models.ForeignKey('self',null=True, related_name='replies', on_delete=models.CASCADE)
 
     class Meta:
         ordering = ('created_at',)
@@ -75,11 +76,17 @@ class Profile(models.Model):
     updated = models.DateTimeField(auto_now=True)
     followers = models.ManyToManyField(User, related_name='following', blank=True)
 
+    def __str__(self):
+        return self.user.username
+
+    @receiver(post_save,sender=User)
     def user_did_save(sender, instance, created, *args, **kwargs):
         if created:
-            Profile.objects.get_or_create(user=instance)
+            Profile.objects.create(user=instance)
+        else:
+            instance.profile.save()
 
-        post_save.connect(user_did_save, sender=User)
+
 
 
 

@@ -30,35 +30,33 @@ class TweetCreateSerializer(serializers.ModelSerializer):
 
 class ReplySerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    # reply = serializers.SerializerMethodField(method_name="get_all_reply")
 
     class Meta:
         model = Comment
         fields = ['tweet', 'content', 'user', 'reply_parent']
         extra_kwargs = {'reply_parent': {'write_only': True}}
 
-
     def get_user(self, obj):
         return str(obj.user.username)
 
+    # def get_all_reply(self, obj):
+    #     if obj.reply_parent is None:
+    #         return Comment.objects.none()
+    #     qs = Comment.objects.filter(reply_parent_id=obj.reply_parent.pk)
+    #     serializer = CommentSerializer(qs, many=True)
+    #     return serializer.data
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    reply = serializers.SerializerMethodField(method_name="get_all_reply")
+    replies = ReplySerializer(many=True,read_only=True)
 
     class Meta:
         model = Comment
-        fields = ['tweet','content','user','reply']
-
+        fields = ['tweet','content','user','replies']
 
     def get_user(self,obj):
         return str(obj.user.username)
-
-    def get_all_reply(self, obj):
-        if obj.reply_parent is None:
-            return Comment.objects.none()
-        qs = Comment.objects.filter(reply_parent_id=obj.reply_parent.pk)
-        serializer = ReplySerializer(qs, many=True)
-        return serializer.data
 
 class TweetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
@@ -68,13 +66,20 @@ class TweetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = ['content', 'user', 'likes', 'is_retweet', 'parent', 'comments']
+        fields = ['content', 'user', 'likes', 'is_retweet','parent', 'comments']
 
     def get_likes(self, obj):
         return obj.likes.count()
 
     def get_user(self, obj):
-        return str(obj.user.username)
+            return str(obj.user.username)
+
+    # def create(self, validated_data):
+    #     comments = validated_data.pop['comments']
+    #     tweet = Tweet.objects.create(**validated_data)
+    #     for comment in comments:
+    #         Comment.objects.create(**comment,tweet=tweet)
+    #         return tweet
 
 class TweetListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
@@ -97,169 +102,4 @@ class TweetActionSerializer(serializers.Serializer):
         if not value in TWEET_ACTION_OPTIONS:
             raise serializers.ValidationError('this is not a valid action')
         return value
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -117,7 +117,7 @@ def tweet_like_view(request,*args,**kwargs):
 
 
 class CommentView(generics.GenericAPIView):
-    # queryset = Comment.objects.filter(parent=None) # Don't
+
     queryset = Comment.objects.all()
 
     serializer_class = CommentSerializer
@@ -136,7 +136,6 @@ class CommentView(generics.GenericAPIView):
 
 
 class ReplyView(generics.GenericAPIView):
-
     serializer_class = ReplySerializer
 
     def post(self, request,*args,**kwargs):
@@ -146,12 +145,14 @@ class ReplyView(generics.GenericAPIView):
             tweet = data.get('tweet')
             content = data.get('content')
             parent = data.get('reply_parent')
+            print(parent)
             qs = Comment.objects.filter(id=parent.id)
+            print(qs)
             if not qs.exists():
                 return Response({'Invalid data'}, status=404)
             obj = qs.first()
             parent_obj = obj
-            reply = Comment.objects.create(user=request.user, reply_parent_id=parent_obj.id, content=content,tweet=tweet)
+            reply = Comment.objects.create(user=request.user,reply_parent_id=parent_obj.id, content=content,tweet=tweet)
             serializer = ReplySerializer(reply)
             return Response(serializer.data, status=200)
 
@@ -173,7 +174,6 @@ def user_follow_view(request, username, *args, **kwargs):
     if action == 'follow':
         profile.followers.add(me)
     elif action == 'unfollow':
-
         profile.followers.remove(me)
     else:
         pass
