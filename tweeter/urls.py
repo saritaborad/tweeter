@@ -20,5 +20,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/tweet/',include('tweet.urls'),name='tweet'),
     path('api/tweet/user/',include('account.urls'))
-
 ]
