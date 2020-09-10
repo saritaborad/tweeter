@@ -158,7 +158,7 @@ class TweetActionView(GenericAPIView):
 
 class CommentView(GenericAPIView):
 
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.filter(reply_parent_id=None)
     serializer_class = CommentSerializer
 
     def get(self, request):

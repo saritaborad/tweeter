@@ -43,9 +43,7 @@ class ReplySerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    # replies = ReplySerializer(many=True, read_only=True)
-    replies = serializers.SerializerMethodField(method_name="get_all_reply")
-    # comments = serializers.SerializerMethodField()
+    replies = ReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = Comment
@@ -54,23 +52,11 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return str(obj.user.username)
 
-    def get_all_reply(self, obj):
-        if obj.reply_parent_id is None:
-            comment_id = obj.id
-            reply_obj = Comment.objects.filter(reply_parent_id=comment_id)
-            if reply_obj.exists():
-                serializer = ReplySerializer(reply_obj, many=True)
-                # print(serializer.data)
-                return serializer.data
-            return Comment.objects.none()
-
 
 class TweetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     likes = serializers.SerializerMethodField(read_only=True)
-    comments = serializers.SerializerMethodField(read_only=True)
-
-    # parent = TweetCreateSerializer(read_only=True)
+    comments = CommentSerializer(many=True,read_only=True)
 
     class Meta:
         model = Tweet
@@ -83,13 +69,14 @@ class TweetSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return str(obj.user.username)
 
-    def get_comments(self,obj):
-        comment_qs = obj.comments.all()
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        comment_qs = instance.comments.all()
         for comment in comment_qs:
             if comment.reply_parent_id is None:
                 serializer = CommentSerializer(comment)
-                return serializer.data
-
+                data['comments'] = serializer.data
+                return data
 
 
 class TweetListSerializer(serializers.ModelSerializer):
