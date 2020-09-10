@@ -13,7 +13,7 @@ from rest_framework.status import HTTP_200_OK,HTTP_400_BAD_REQUEST
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import (IsAuthenticated,AllowAny,IsAuthenticatedOrReadOnly)
-from tweet.models import Tweet,Comment,Reply
+from tweet.models import Tweet,Comment
 from tweet.serializers import *
 
 
@@ -210,14 +210,15 @@ class ReplyView(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
             data = serializer.validated_data
-            comment = data.get('comment')
+            tweet = data.get('tweet')
+            comment = data.get('reply_parent')
             content = data.get('content')
             qs = Comment.objects.filter(id=comment.id)
             if not qs.exists():
                 return Response({'Invalid data'}, status=404)
             obj = qs.first()
             parent_obj = obj
-            reply = Reply.objects.create(user=request.user,comment_id=parent_obj.id, content=content)
+            reply = Comment.objects.create(tweet_id=tweet.id,user=request.user,reply_parent_id=parent_obj.id, content=content)
             serializer = self.serializer_class(reply)
             return Response(serializer.data, status=200)
 

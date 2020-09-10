@@ -1,5 +1,5 @@
 from django.contrib import admin
-from tweet.models import Tweet, TweetLike, Comment, Reply
+from tweet.models import Tweet, TweetLike, Comment
 from tweet.models import Profile
 
 
@@ -22,14 +22,14 @@ class CommentAdmin(admin.ModelAdmin):
         model = Comment
 
 
-class ReplyAdmin(admin.ModelAdmin):
-    list_display = ['content', 'user']
-
-    class Meta:
-        model = Reply
+# class ReplyAdmin(admin.ModelAdmin):
+#     list_display = ['content', 'user']
+#
+#     class Meta:
+#         model = Reply
 
 
 admin.site.register(Tweet,TweetAdmin)
 admin.site.register(Comment,CommentAdmin)
-admin.site.register(Reply,ReplyAdmin)
+# admin.site.register(Reply,ReplyAdmin)
 admin.site.register(Profile)

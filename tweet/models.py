@@ -34,7 +34,7 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    # reply_parent = models.ForeignKey('self',null=True, related_name='replies', on_delete=models.CASCADE)
+    reply_parent = models.ForeignKey('self',null=True, related_name='replies', on_delete=models.CASCADE)
 
     class Meta:
         ordering = ('created_at',)
@@ -43,12 +43,14 @@ class Comment(models.Model):
     def __str__(self):
         return f'Comment by {self.user.username} on {self.tweet}'
 
-class Reply(models.Model):
-    comment = models.ForeignKey(Comment,on_delete=models.CASCADE,
-                              related_name='replies')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+
+# class Reply(models.Model):
+#     comment = models.ForeignKey(Comment,on_delete=models.CASCADE,
+#                               related_name='replies')
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     content = models.TextField(max_length=255)
+#     created_at = models.DateTimeField(auto_now_add=True)
 
 class FollowerRelation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

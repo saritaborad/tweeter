@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db.models import Q
 from django.contrib.auth.models import User
-from tweet.models import Tweet, Comment, Reply
+from tweet.models import Tweet, Comment
 from rest_framework import serializers
 
 MAX_TWEET_LENGTH = settings.MAX_TWEET_LENGTH
@@ -28,12 +28,13 @@ class TweetCreateSerializer(serializers.ModelSerializer):
         return value
 
 
+
 class ReplySerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
 
     class Meta:
-        model = Reply
-        fields = ['comment', 'content', 'user']
+        model = Comment
+        fields = ['tweet','reply_parent', 'content', 'user']
         # extra_kwargs = {'comment':{'write_only':True}}
 
     def get_user(self, obj):
@@ -42,9 +43,9 @@ class ReplySerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    replies = ReplySerializer(many=True, read_only=True)
-
-    # reply = serializers.SerializerMethodField(method_name="get_all_reply")
+    # replies = ReplySerializer(many=True, read_only=True)
+    replies = serializers.SerializerMethodField(method_name="get_all_reply")
+    # comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -53,19 +54,21 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return str(obj.user.username)
 
-    # def get_all_reply(self, obj):
-    #     if obj.reply_parent_id is None:
-    #         return Comment.objects.none()
-    #     comment_obj = Comment.objects.filter(id=obj.id).first()
-    #     qs = Comment.objects.filter(reply_parent_id=comment_obj.id)
-    #     serializer = ReplySerializer(qs, many=True)
-    #     return serializer.data
+    def get_all_reply(self, obj):
+        if obj.reply_parent_id is None:
+            comment_id = obj.id
+            reply_obj = Comment.objects.filter(reply_parent_id=comment_id)
+            if reply_obj.exists():
+                serializer = ReplySerializer(reply_obj, many=True)
+                # print(serializer.data)
+                return serializer.data
+            return Comment.objects.none()
 
 
 class TweetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     likes = serializers.SerializerMethodField(read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
+    comments = serializers.SerializerMethodField(read_only=True)
 
     # parent = TweetCreateSerializer(read_only=True)
 
@@ -79,6 +82,14 @@ class TweetSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         return str(obj.user.username)
+
+    def get_comments(self,obj):
+        comment_qs = obj.comments.all()
+        for comment in comment_qs:
+            if comment.reply_parent_id is None:
+                serializer = CommentSerializer(comment)
+                return serializer.data
+
 
 
 class TweetListSerializer(serializers.ModelSerializer):
