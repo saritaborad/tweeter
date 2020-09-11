@@ -1,21 +1,17 @@
-from django.urls import path
+from django.urls import path,include
 from .views import *
+
 
 urlpatterns = [
     # tweet related urls
-    path('create/',tweet_create_view),
-    path('list/',tweet_list_view),
-    path('feed/',tweet_feed_view),
+    path('create/',TweetCreateView.as_view()),
+    path('list/',TweetListView.as_view()),
+    path('feed/',TweetFeedView.as_view()),
     path('<int:pk>/',TweetDetailAPIView.as_view(),name='detail'),
-    path('<int:tweet_id>/delete/',tweet_delete_view),
-    path('acction/',tweet_like_view),
-
-    #  user related urls
+    path('<int:pk>/delete/',TweetDeleteView.as_view()),
+    path('action/',TweetActionView.as_view()),
+    path('comment/',CommentView.as_view()),
+    path('reply/',ReplyView.as_view()),
     path('follow/<str:username>/',user_follow_view),
-    path('register/',UserCreateApiView.as_view(),name='register'),
-    path('login/',UserLoginAPIView.as_view(),name='login'),
-    path('password-reset/<uidb64>/<token>/',PasswordTokenCheckAPIView.as_view(),name='password-reset'),
-    path('pasword-reset-request/',PasswrodResetAPIView.as_view(),name='request-email'),
-    path('set-password/',SetNewPasswordAPIView.as_view(),name='set-new-passwrod'),
 
 ]
