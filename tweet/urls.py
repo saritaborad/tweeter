@@ -12,6 +12,6 @@ urlpatterns = [
     path('action/',TweetActionView.as_view()),
     path('comment/',CommentView.as_view()),
     path('reply/',ReplyView.as_view()),
-    path('follow/<str:username>/',user_follow_view),
+    path('follow/<str:username>/',UserFollowView.as_view()),
 
 ]

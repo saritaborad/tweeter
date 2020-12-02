@@ -21,7 +21,6 @@ class TweetDetailAPIView(GenericAPIView):
     serializer_class = TweetSerializer
     permission_classes = [IsAuthenticated]
 
-
     def get_object(self,pk):
         try:
             qs = Tweet.objects.filter(id=pk)
@@ -71,9 +70,7 @@ class TweetFeedView(GenericAPIView):
 
     def get(self,request,*args,**kwargs):
         user = request.user
-        print(user)
         profiles_exist = user.following.exists()
-        print(profiles_exist)
         follow_user_id = []
         if profiles_exist or User.objects.filter(username=user):
             follow_user_id = user.following.values_list('user__id', flat=True)
@@ -175,6 +172,7 @@ class CommentView(GenericAPIView):
 
 
 class ReplyView(GenericAPIView):
+
     serializer_class = ReplySerializer
 
     def get_object(self,pk):
@@ -185,12 +183,12 @@ class ReplyView(GenericAPIView):
         except Reply.DoesNotExist:
             return Response('Reply is not found',status=404)
 
-        # def get(self,pk=None,*args,**kwargs):
-        #     obj = self.get_object(pk)
-        #     if obj:
-        #         serializer = self.serializer_class(obj, many=False)
-        #         return Response(serializer.data, status=200)
-        #     return Response({'error': 'Given reply not found'}, status=404)
+    def get(self,pk=None,*args,**kwargs):
+        obj = self.get_object(pk)
+        if obj:
+            serializer = self.serializer_class(obj, many=False)
+            return Response(serializer.data, status=200)
+        return Response({'error': 'Given reply not found'}, status=404)
 
 
     def put(self,request,pk=None,*args,**kwargs):
@@ -223,27 +221,37 @@ class ReplyView(GenericAPIView):
             return Response(serializer.data, status=200)
 
 
+class UserFollowView(GenericAPIView):
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def user_follow_view(request, username, *args, **kwargs):
-    me = request.user
-    other_user = User.objects.filter(username=username)
-    if me.username == username:
-        my_follower = me.profile.followers.all()
-        return Response({'followers': my_follower.count()}, status=200)
+    def get(self,request,username,*args,**kwargs):
+        me = request.user
+        other_user = User.objects.filter(username=username)
+        if me.username == username:
+            my_follower = me.profile.followers.all()
+            return Response({'followers': my_follower.count()}, status=200)
 
-    if not other_user.exists():
-        return Response({}, status=404)
-    other = other_user.first()
-    profile = other.profile
-    data = request.data or {}
-    action = data.get('action')
-    if action == 'follow':
-        profile.followers.add(me)
-    elif action == 'unfollow':
-        profile.followers.remove(me)
-    else:
-        pass
-    current_follower = profile.followers.all()
-    return Response({'followers': current_follower.count()}, status=200)
+        if not other_user.exists():
+            return Response({'No such user exists'}, status=404)
+
+    def post(self,request,username,*args,**kwargs):
+        me = request.user
+        other_user = User.objects.filter(username=username)
+        if me.username == username:
+            my_follower = me.profile.followers.all()
+            return Response({'followers': my_follower.count()}, status=200)
+
+        if not other_user.exists():
+            return Response({}, status=404)
+        other = other_user.first()
+        profile = other.profile
+        data = request.data or {}
+        action = data.get('action')
+        if action == 'follow':
+            profile.followers.add(me)
+        elif action == 'unfollow':
+            profile.followers.remove(me)
+        else:
+            pass
+        current_follower = profile.followers.all()
+        return Response({'followers': current_follower.count()}, status=200)
+
